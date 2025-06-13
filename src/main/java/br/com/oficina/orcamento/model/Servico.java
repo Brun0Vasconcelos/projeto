@@ -1,6 +1,7 @@
 package br.com.oficina.orcamento.model;
 
 import br.com.oficina.orcamento.enums.FormaPagamento;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,11 +41,9 @@ public class Servico {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "veiculo_id", nullable = false)
+    @JsonBackReference  // 👈 Impede a serialização do veículo dentro do serviço (evita loop)
     private Veiculo veiculo;
 
-    /**
-     * Construtor de conveniência para criar já atrelado a um veículo.
-     */
     public Servico(String descricao,
                    LocalDate dataEntrada,
                    LocalDate dataEntrega,

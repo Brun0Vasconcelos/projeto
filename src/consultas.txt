@@ -1,0 +1,12 @@
+para consultar veiculos associados ao cliente;
+
+SELECT
+    cliente.id AS cliente_id,
+    cliente.nome AS nome_cliente,
+    veiculo.id AS veiculo_id,
+    veiculo.modelo,
+    veiculo.placa
+FROM
+    cliente
+JOIN
+    veiculo ON veiculo.cliente_id = cliente.id;

@@ -1,36 +1,47 @@
-// src/main/java/br/com/oficina/orcamento/dto/ServicoDTO.java
 package br.com.oficina.orcamento.dto;
 
 import br.com.oficina.orcamento.enums.FormaPagamento;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import br.com.oficina.orcamento.model.Servico;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class ServicoDTO {
-
-    @NotBlank(message = "Descrição é obrigatória")
+    private Long id;
     private String descricao;
-
-    @NotNull(message = "Data de entrada é obrigatória")
-    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate dataEntrada;
-
-    @NotNull(message = "Data de saída é obrigatória")
-    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDate dataEntrega;
-
-    @NotNull(message = "Valor é obrigatório")
     private BigDecimal valor;
-
-    @NotNull(message = "Forma de pagamento é obrigatória")
     private FormaPagamento formaPagamento;
-
     private String linkNotaFiscal;
 
-    public ServicoDTO() {}
+    public ServicoDTO() {
+        // construtor vazio para frameworks
+    }
+
+    public ServicoDTO(Long id, String descricao, LocalDate dataEntrada, LocalDate dataEntrega,
+                      BigDecimal valor, FormaPagamento formaPagamento, String linkNotaFiscal) {
+        this.id = id;
+        this.descricao = descricao;
+        this.dataEntrada = dataEntrada;
+        this.dataEntrega = dataEntrega;
+        this.valor = valor;
+        this.formaPagamento = formaPagamento;
+        this.linkNotaFiscal = linkNotaFiscal;
+    }
+
+    public ServicoDTO(Servico s) {
+        this(s.getId(), s.getDescricao(), s.getDataEntrada(), s.getDataEntrega(),
+                s.getValor(), s.getFormaPagamento(), s.getLinkNotaFiscal());
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getDescricao() {
         return descricao;

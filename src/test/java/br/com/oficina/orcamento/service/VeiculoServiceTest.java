@@ -1,3 +1,5 @@
+package br.com.oficina.orcamento.service;
+
 import br.com.oficina.orcamento.dto.VeiculoDTO;
 import br.com.oficina.orcamento.model.Cliente;
 import br.com.oficina.orcamento.model.Veiculo;
