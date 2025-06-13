@@ -24,37 +24,45 @@ public class ServicoController {
 
     @Operation(summary = "Lista todos os serviços de um veículo")
     @GetMapping
-    public ResponseEntity<List<Servico>> listarPorVeiculo(@PathVariable Long veiculoId) {
-        List<Servico> lista = service.listarPorVeiculo(veiculoId);
-        return ResponseEntity.ok(lista);
+    public ResponseEntity<List<ServicoDTO>> listarPorVeiculo(@PathVariable Long veiculoId) {
+        var dtos = service.listarPorVeiculo(veiculoId)
+                .stream()
+                .map(ServicoDTO::new)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @Operation(summary = "Busca um serviço por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<Servico> buscarPorId(
+    public ResponseEntity<ServicoDTO> buscarPorId(
             @PathVariable Long veiculoId,
             @PathVariable Long id) {
-        Servico serv = service.buscarPorId(id);
-        return ResponseEntity.ok(serv);
+
+        Servico serv = service.buscarPorVeiculo(veiculoId, id);
+        return ResponseEntity.ok(new ServicoDTO(serv));
     }
 
     @Operation(summary = "Cadastra um novo serviço em um veículo")
     @PostMapping
-    public ResponseEntity<Servico> criar(
+    public ResponseEntity<ServicoDTO> criar(
             @PathVariable Long veiculoId,
-            @RequestBody @Valid ServicoDTO dto) {
+            @Valid @RequestBody ServicoDTO dto) {
+
         Servico criado = service.adicionarAoVeiculo(veiculoId, dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(criado);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new ServicoDTO(criado));
     }
 
     @Operation(summary = "Atualiza um serviço existente")
     @PutMapping("/{id}")
-    public ResponseEntity<Servico> atualizar(
+    public ResponseEntity<ServicoDTO> atualizar(
             @PathVariable Long veiculoId,
             @PathVariable Long id,
-            @RequestBody @Valid ServicoDTO dto) {
-        Servico atualizado = service.atualizar(id, dto);
-        return ResponseEntity.ok(atualizado);
+            @Valid @RequestBody ServicoDTO dto) {
+
+        Servico upd = service.atualizar(veiculoId, id, dto);
+        return ResponseEntity.ok(new ServicoDTO(upd));
     }
 
     @Operation(summary = "Remove um serviço")
@@ -62,7 +70,8 @@ public class ServicoController {
     public ResponseEntity<Void> remover(
             @PathVariable Long veiculoId,
             @PathVariable Long id) {
-        service.remover(id);
+
+        service.remover(veiculoId, id);
         return ResponseEntity.noContent().build();
     }
 }

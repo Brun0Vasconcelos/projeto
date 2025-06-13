@@ -19,9 +19,7 @@ public class ServicoService {
     private final ServicoRepository servicoRepo;
     private final VeiculoRepository veiculoRepo;
 
-    /**
-     * 1) Cria um serviço vinculado a um veículo existente
-     */
+    /** 1) Cria um serviço vinculado a um veículo existente */
     @Transactional
     public Servico adicionarAoVeiculo(Long veiculoId, ServicoDTO dto) {
         Veiculo veiculo = veiculoRepo.findById(veiculoId)
@@ -40,9 +38,7 @@ public class ServicoService {
         return servicoRepo.save(servico);
     }
 
-    /**
-     * 2) Lista todos os serviços de um veículo
-     */
+    /** 2) Lista todos os serviços de um veículo */
     @Transactional(readOnly = true)
     public List<Servico> listarPorVeiculo(Long veiculoId) {
         if (!veiculoRepo.existsById(veiculoId)) {
@@ -51,18 +47,14 @@ public class ServicoService {
         return servicoRepo.findByVeiculoId(veiculoId);
     }
 
-    /**
-     * 3) Busca um serviço pelo seu ID
-     */
+    /** 3) Busca um serviço pelo seu ID */
     @Transactional(readOnly = true)
     public Servico buscarPorId(Long id) {
         return servicoRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado"));
     }
 
-    /**
-     * 4) Atualiza os dados de um serviço existente
-     */
+    /** 4) Atualiza os dados de um serviço existente */
     @Transactional
     public Servico atualizar(Long id, ServicoDTO dto) {
         Servico existente = buscarPorId(id);
@@ -73,17 +65,45 @@ public class ServicoService {
         existente.setValor(dto.getValor());
         existente.setFormaPagamento(dto.getFormaPagamento());
         existente.setLinkNotaFiscal(dto.getLinkNotaFiscal());
-        // não alteramos aqui o veículo
 
         return servicoRepo.save(existente);
     }
 
-    /**
-     * 5) Remove um serviço
-     */
+    /** 5) Remove um serviço */
     @Transactional
     public void remover(Long id) {
         Servico existente = buscarPorId(id);
+        servicoRepo.delete(existente);
+    }
+
+    // —–––––– métodos que respeitam o escopo do veículo —––––––—
+
+    public Servico buscarPorVeiculo(Long veiculoId, Long id) {
+        if (!veiculoRepo.existsById(veiculoId)) {
+            throw new EntityNotFoundException("Veículo não encontrado");
+        }
+        return servicoRepo.findById(id)
+                .filter(s -> s.getVeiculo().getId().equals(veiculoId))
+                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado para este veículo"));
+    }
+
+    @Transactional
+    public Servico atualizar(Long veiculoId, Long id, ServicoDTO dto) {
+        Servico existente = buscarPorVeiculo(veiculoId, id);
+
+        existente.setDescricao(dto.getDescricao());
+        existente.setDataEntrada(dto.getDataEntrada());
+        existente.setDataEntrega(dto.getDataEntrega());
+        existente.setValor(dto.getValor());
+        existente.setFormaPagamento(dto.getFormaPagamento());
+        existente.setLinkNotaFiscal(dto.getLinkNotaFiscal());
+
+        return servicoRepo.save(existente);
+    }
+
+    @Transactional
+    public void remover(Long veiculoId, Long id) {
+        Servico existente = buscarPorVeiculo(veiculoId, id);
         servicoRepo.delete(existente);
     }
 }
