@@ -1,57 +1,98 @@
 package br.com.oficina.orcamento.service;
 
-import com.itextpdf.io.font.constants.StandardFonts;
-import com.itextpdf.kernel.font.PdfFont;
+import br.com.oficina.orcamento.dto.ItemOrcamentoDTO;
+import br.com.oficina.orcamento.dto.OrcamentoDTO;
+import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFontFactory;
-import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.math.RoundingMode;
+import java.util.Locale;
 
 @Service
+@RequiredArgsConstructor
 public class PdfGeneratorService {
 
-    /**
-     * Gera um PDF simples contendo um título e um parágrafo de texto.
-     * @param titulo título que aparecerá em negrito no topo
-     * @param conteudo bloco de texto principal
-     * @return array de bytes do PDF gerado
-     */
-    public byte[] gerarPdfComTexto(String titulo, String conteudo) {
+    public byte[] gerarPdf(OrcamentoDTO orc) throws Exception {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            // 1) Criar writer e documento iText
-            PdfWriter writer = new PdfWriter(baos);
-            PdfDocument pdf = new PdfDocument(writer);
-            Document document = new Document(pdf);
+            var writer = new PdfWriter(baos);
+            var pdf = new com.itextpdf.kernel.pdf.PdfDocument(writer);
+            var doc = new Document(pdf);
 
-            // 2) Carregar fonte padrão (Helvetica) e criar Paragraphs
-            PdfFont bold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
-            PdfFont regular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+            // Cabeçalho
+            doc.add(new Paragraph("ORÇAMENTO")
+                    .setFont(PdfFontFactory.createFont())
+                    .setFontSize(18)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER));
 
-            // 3) Adicionar título em negrito
-            Paragraph pTitulo = new Paragraph(titulo)
-                    .setFont(bold)
-                    .setFontSize(16);
-            document.add(pTitulo);
+            doc.add(new Paragraph(String.format("Orçamento ID: %d", orc.id()))
+                    .setTextAlignment(TextAlignment.LEFT));
+            doc.add(new Paragraph(String.format("Cliente: %s (ID: %d)", orc.nomeCliente(), orc.clienteId())));
+            doc.add(new Paragraph(String.format("Veículo: %s %s (ID: %d)", orc.placaVeiculo(), orc.modeloVeiculo(), orc.veiculoId())));
+            doc.add(new Paragraph(String.format("Data: %s", orc.data()))
+                    .setTextAlignment(TextAlignment.RIGHT));
+            doc.add(new Paragraph("\n"));
 
-            // Espaço
-            document.add(new Paragraph("\n"));
+            // Tabela de itens
+            Table tabela = new Table(new float[]{40, 100, 60, 60, 60});
+            // Definindo largura em percentual
+            tabela.setWidth(UnitValue.createPercentValue(100));
 
-            // 4) Adicionar corpo de texto
-            Paragraph pConteudo = new Paragraph(conteudo)
-                    .setFont(regular)
-                    .setFontSize(12);
-            document.add(pConteudo);
+            tabela.addHeaderCell(headerCell("ID"));
+            tabela.addHeaderCell(headerCell("Descrição"));
+            tabela.addHeaderCell(headerCell("Entrada"));
+            tabela.addHeaderCell(headerCell("Saída"));
+            tabela.addHeaderCell(headerCell("Valor"));
 
-            // 5) Fechar documento
-            document.close();
+            for (ItemOrcamentoDTO item : orc.itens()) {
+                tabela.addCell(cell(item.id().toString()));
+                tabela.addCell(cell(item.descricao()));
+                tabela.addCell(cell(item.dataEntrada().toString()));
+                tabela.addCell(cell(item.dataEntrega().toString()));
+                tabela.addCell(cell(item.valor()
+                        .setScale(2, RoundingMode.HALF_UP)
+                        .toString()));
+            }
+            doc.add(tabela);
 
+            // Totais
+            doc.add(new Paragraph("\n"));
+            doc.add(new Paragraph(String.format(Locale.US,
+                    "Total bruto: R$ %.2f", orc.totalBruto()))
+                    .setBold());
+            doc.add(new Paragraph(
+                    "Desconto: " + orc.descontoPercentual() + "%"));
+            doc.add(new Paragraph(String.format(Locale.US,
+                    "Total líquido: R$ %.2f", orc.totalLiquido()))
+                    .setBold());
+            doc.add(new Paragraph("Parcelas: " + orc.parcelas()));
+
+            doc.close();
             return baos.toByteArray();
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao gerar PDF", e);
         }
+    }
+
+    private Cell headerCell(String texto) {
+        return new Cell()
+                .add(new Paragraph(texto)
+                        .setBold()
+                        .setFontColor(ColorConstants.WHITE))
+                .setBackgroundColor(ColorConstants.DARK_GRAY)
+                .setTextAlignment(TextAlignment.CENTER);
+    }
+
+    private Cell cell(String texto) {
+        return new Cell()
+                .add(new Paragraph(texto));
     }
 }

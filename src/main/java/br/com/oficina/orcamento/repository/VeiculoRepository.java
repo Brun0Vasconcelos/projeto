@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
+
     Optional<Veiculo> findByPlaca(String placa);
+
     List<Veiculo> findByPlacaContainingIgnoreCase(String placa);
 
-    // <<< este é o novo método
+    /**
+     * Necessário para o método porCliente(...)
+     */
     List<Veiculo> findByClienteId(Long clienteId);
 }
