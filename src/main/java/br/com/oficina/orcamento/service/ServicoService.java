@@ -16,94 +16,79 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ServicoService {
 
-    private final ServicoRepository servicoRepo;
-    private final VeiculoRepository veiculoRepo;
+    private final ServicoRepository servicoRepository;
+    private final VeiculoRepository veiculoRepository;
 
-    /** 1) Cria um serviço vinculado a um veículo existente */
+    /**
+     * Cadastra um serviço vinculado a um veículo
+     */
     @Transactional
     public Servico adicionarAoVeiculo(Long veiculoId, ServicoDTO dto) {
-        Veiculo veiculo = veiculoRepo.findById(veiculoId)
-                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado"));
+        Veiculo veiculo = veiculoRepository.findById(veiculoId)
+                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado com ID: " + veiculoId));
 
-        Servico servico = new Servico(
-                dto.getDescricao(),
-                dto.getDataEntrada(),
-                dto.getDataEntrega(),
-                dto.getValor(),
-                dto.getFormaPagamento(),
-                dto.getLinkNotaFiscal(),
-                veiculo
-        );
+        Servico servico = new Servico();
+        servico.setDescricao(dto.getDescricao());
+        servico.setDataEntrada(dto.getDataEntrada());
+        servico.setDataEntrega(dto.getDataEntrega());
+        servico.setValor(dto.getValor());
+        servico.setFormaPagamento(dto.getFormaPagamento());
+        servico.setLinkNotaFiscal(dto.getLinkNotaFiscal());
+        servico.setVeiculo(veiculo);
 
-        return servicoRepo.save(servico);
+        return servicoRepository.save(servico);
     }
 
-    /** 2) Lista todos os serviços de um veículo */
+    /**
+     * Lista todos os serviços
+     */
     @Transactional(readOnly = true)
-    public List<Servico> listarPorVeiculo(Long veiculoId) {
-        if (!veiculoRepo.existsById(veiculoId)) {
-            throw new EntityNotFoundException("Veículo não encontrado");
-        }
-        return servicoRepo.findByVeiculoId(veiculoId);
+    public List<Servico> listar() {
+        return servicoRepository.findAll();
     }
 
-    /** 3) Busca um serviço pelo seu ID */
+    /**
+     * Busca serviço por ID
+     */
     @Transactional(readOnly = true)
     public Servico buscarPorId(Long id) {
-        return servicoRepo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado"));
+        return servicoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado com ID: " + id));
     }
 
-    /** 4) Atualiza os dados de um serviço existente */
+    /**
+     * Lista serviços vinculados a um veículo
+     */
+    @Transactional(readOnly = true)
+    public List<Servico> listarPorVeiculo(Long veiculoId) {
+        return servicoRepository.findByVeiculoId(veiculoId);
+    }
+
+    /**
+     * Atualiza um serviço
+     */
     @Transactional
     public Servico atualizar(Long id, ServicoDTO dto) {
-        Servico existente = buscarPorId(id);
+        Servico servico = servicoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado com ID: " + id));
 
-        existente.setDescricao(dto.getDescricao());
-        existente.setDataEntrada(dto.getDataEntrada());
-        existente.setDataEntrega(dto.getDataEntrega());
-        existente.setValor(dto.getValor());
-        existente.setFormaPagamento(dto.getFormaPagamento());
-        existente.setLinkNotaFiscal(dto.getLinkNotaFiscal());
+        servico.setDescricao(dto.getDescricao());
+        servico.setDataEntrada(dto.getDataEntrada());
+        servico.setDataEntrega(dto.getDataEntrega());
+        servico.setValor(dto.getValor());
+        servico.setFormaPagamento(dto.getFormaPagamento());
+        servico.setLinkNotaFiscal(dto.getLinkNotaFiscal());
 
-        return servicoRepo.save(existente);
+        return servicoRepository.save(servico);
     }
 
-    /** 5) Remove um serviço */
+    /**
+     * Remove um serviço
+     */
     @Transactional
     public void remover(Long id) {
-        Servico existente = buscarPorId(id);
-        servicoRepo.delete(existente);
-    }
-
-    // —–––––– métodos que respeitam o escopo do veículo —––––––—
-
-    public Servico buscarPorVeiculo(Long veiculoId, Long id) {
-        if (!veiculoRepo.existsById(veiculoId)) {
-            throw new EntityNotFoundException("Veículo não encontrado");
-        }
-        return servicoRepo.findById(id)
-                .filter(s -> s.getVeiculo().getId().equals(veiculoId))
-                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado para este veículo"));
-    }
-
-    @Transactional
-    public Servico atualizar(Long veiculoId, Long id, ServicoDTO dto) {
-        Servico existente = buscarPorVeiculo(veiculoId, id);
-
-        existente.setDescricao(dto.getDescricao());
-        existente.setDataEntrada(dto.getDataEntrada());
-        existente.setDataEntrega(dto.getDataEntrega());
-        existente.setValor(dto.getValor());
-        existente.setFormaPagamento(dto.getFormaPagamento());
-        existente.setLinkNotaFiscal(dto.getLinkNotaFiscal());
-
-        return servicoRepo.save(existente);
-    }
-
-    @Transactional
-    public void remover(Long veiculoId, Long id) {
-        Servico existente = buscarPorVeiculo(veiculoId, id);
-        servicoRepo.delete(existente);
+        Servico servico = servicoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Serviço não encontrado com ID: " + id));
+        servicoRepository.delete(servico);
     }
 }

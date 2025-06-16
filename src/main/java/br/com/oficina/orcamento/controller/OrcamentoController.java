@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/controller/OrcamentoController.java
 package br.com.oficina.orcamento.controller;
 
 import br.com.oficina.orcamento.dto.OrcamentoDTO;
@@ -13,15 +12,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/orcamentos")
 @RequiredArgsConstructor
-@Tag(name = "Orçamentos", description = "Opera sobre orçamentos")
+@CrossOrigin(origins = "*")
+@Tag(name = "Orçamentos", description = "Gerenciamento de orçamentos")
 public class OrcamentoController {
 
     private final OrcamentoService service;
 
     @Operation(summary = "Gera um novo orçamento para um veículo")
-    @PostMapping("/veiculos/{veiculoId}/orcamentos")
+    @PostMapping("/veiculos/{veiculoId}")
     public ResponseEntity<OrcamentoDTO> gerarPorVeiculo(
             @PathVariable Long veiculoId,
             @RequestParam @Min(0) int descontoPercentual,
@@ -32,19 +32,19 @@ public class OrcamentoController {
     }
 
     @Operation(summary = "Lista todos os orçamentos de um cliente")
-    @GetMapping("/clientes/{clienteId}/orcamentos")
+    @GetMapping("/clientes/{clienteId}")
     public List<OrcamentoDTO> listarPorCliente(@PathVariable Long clienteId) {
         return service.listarPorCliente(clienteId);
     }
 
     @Operation(summary = "Lista todos os orçamentos de um veículo")
-    @GetMapping("/veiculos/{veiculoId}/orcamentos")
+    @GetMapping("/veiculos/{veiculoId}")
     public List<OrcamentoDTO> listarPorVeiculo(@PathVariable Long veiculoId) {
         return service.listarPorVeiculo(veiculoId);
     }
 
     @Operation(summary = "Atualiza desconto e/ou parcelas de um orçamento")
-    @PutMapping("/orcamentos/{id}")
+    @PutMapping("/{id}")
     public OrcamentoDTO atualizar(
             @PathVariable Long id,
             @RequestParam(required = false) Integer descontoPercentual,
@@ -54,7 +54,7 @@ public class OrcamentoController {
     }
 
     @Operation(summary = "Remove um orçamento")
-    @DeleteMapping("/orcamentos/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> remover(@PathVariable Long id) {
         service.remover(id);
         return ResponseEntity.noContent().build();

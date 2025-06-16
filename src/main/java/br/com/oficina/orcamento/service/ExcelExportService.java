@@ -4,7 +4,6 @@ import br.com.oficina.orcamento.dto.OrcamentoDTO;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -16,139 +15,88 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class ExcelExportService {
 
-    private final OrcamentoService orcService;
+    private final OrcamentoService orcamentoService;
 
-    /**
-     * Método chamado pelo seu controller:
-     * GET /orcamentos/{id}/excel
-     */
     public byte[] exportarOrcamentoParaExcel(Long orcamentoId) throws IOException {
-        OrcamentoDTO dto = orcService.buscarPorId(orcamentoId);
-        return gerarExcel(dto);
-    }
+        OrcamentoDTO dto = orcamentoService.buscarPorId(orcamentoId);
 
-    /**
-     * Gera o .xlsx a partir do DTO
-     */
-    private byte[] gerarExcel(OrcamentoDTO orc) throws IOException {
         try (SXSSFWorkbook wb = new SXSSFWorkbook();
              ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
-            // Cria sheet streaming e habilita o tracking para auto-sizing
-            SXSSFSheet sheet = (SXSSFSheet) wb.createSheet("Orçamento");
-            sheet.trackAllColumnsForAutoSizing();
-
-            // Fonte e estilo para cabeçalho
-            Font boldFont = wb.createFont();
-            boldFont.setBold(true);
-            CellStyle headerStyle = wb.createCellStyle();
-            headerStyle.setFont(boldFont);
-
-            // Formato de data BR
+            Sheet sheet = wb.createSheet("Orçamento");
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+            Font boldFont = wb.createFont();
+            boldFont.setBold(true);
+            CellStyle boldStyle = wb.createCellStyle();
+            boldStyle.setFont(boldFont);
+
             int rowIdx = 0;
-            Row row;
-            Cell cell;
 
-            // Título
+            Row row = sheet.createRow(rowIdx++);
+            Cell title = row.createCell(0);
+            title.setCellValue("Orçamento Oficina");
+            title.setCellStyle(boldStyle);
+
             row = sheet.createRow(rowIdx++);
-            cell = row.createCell(0);
-            cell.setCellValue("ORÇAMENTO");
-            CellStyle titleStyle = wb.createCellStyle();
-            titleStyle.setFont(boldFont);
-            cell.setCellStyle(titleStyle);
+            row.createCell(0).setCellValue("ID:");
+            row.createCell(1).setCellValue(dto.id());
 
-            // Linha de ID
-            row = sheet.createRow(rowIdx++);
-            row.createCell(0).setCellValue("Orçamento ID:");
-            row.createCell(1).setCellValue(orc.id());
-
-            // Cliente
-            row = sheet.createRow(rowIdx++);
-            row.createCell(0).setCellValue("Cliente:");
-            row.createCell(1).setCellValue(
-                    String.format("%s (ID: %d)", orc.nomeCliente(), orc.clienteId())
-            );
-
-            // Veículo
-            row = sheet.createRow(rowIdx++);
-            row.createCell(0).setCellValue("Veículo:");
-            row.createCell(1).setCellValue(
-                    String.format("%s %s (ID: %d)",
-                            orc.placaVeiculo(), orc.modeloVeiculo(), orc.veiculoId())
-            );
-
-            // Data do orçamento
             row = sheet.createRow(rowIdx++);
             row.createCell(0).setCellValue("Data:");
-            row.createCell(1).setCellValue(
-                    orc.data().format(fmt)
-            );
+            row.createCell(1).setCellValue(dto.data().format(fmt));
 
-            // Linha em branco
+            row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue("Cliente:");
+            row.createCell(1).setCellValue(dto.nomeCliente() + " (ID: " + dto.clienteId() + ")");
+
+            row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue("Veículo:");
+            row.createCell(1).setCellValue(dto.placaVeiculo() + " - " + dto.modeloVeiculo());
+
             rowIdx++;
 
-            // Cabeçalho da tabela de itens
+            // Cabeçalho dos serviços
             row = sheet.createRow(rowIdx++);
-            String[] headers = { "Serviço", "Entrada", "Saída", "Valor" };
+            String[] headers = {"Descrição", "Entrada", "Entrega", "Valor"};
             for (int i = 0; i < headers.length; i++) {
-                cell = row.createCell(i);
+                Cell cell = row.createCell(i);
                 cell.setCellValue(headers[i]);
-                cell.setCellStyle(headerStyle);
+                cell.setCellStyle(boldStyle);
             }
 
-            // Linhas de cada item
-            for (var item : orc.itens()) {
+            // Dados dos itens
+            for (var item : dto.itens()) {
                 row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(item.descricao());
                 row.createCell(1).setCellValue(item.dataEntrada().format(fmt));
                 row.createCell(2).setCellValue(item.dataEntrega().format(fmt));
-                row.createCell(3).setCellValue(
-                        String.format(Locale.US, "R$ %.2f", item.valor())
-                );
+                row.createCell(3).setCellValue(String.format(Locale.US, "R$ %.2f", item.valor()));
             }
 
-            // Linha em branco antes dos totais
             rowIdx++;
 
             // Totais
             row = sheet.createRow(rowIdx++);
-            cell = row.createCell(0);
-            cell.setCellValue("Total bruto:");
-            cell.setCellStyle(headerStyle);
-            row.createCell(1).setCellValue(
-                    String.format(Locale.US, "R$ %.2f", orc.totalBruto())
-            );
+            row.createCell(0).setCellValue("Total Bruto:");
+            row.createCell(1).setCellValue(dto.totalBruto().doubleValue());
 
             row = sheet.createRow(rowIdx++);
-            cell = row.createCell(0);
-            cell.setCellValue("Desconto (%):");
-            cell.setCellStyle(headerStyle);
-            row.createCell(1).setCellValue(orc.descontoPercentual());
+            row.createCell(0).setCellValue("Desconto (%):");
+            row.createCell(1).setCellValue(dto.descontoPercentual());
 
             row = sheet.createRow(rowIdx++);
-            cell = row.createCell(0);
-            cell.setCellValue("Total líquido:");
-            cell.setCellStyle(headerStyle);
-            row.createCell(1).setCellValue(
-                    String.format(Locale.US, "R$ %.2f", orc.totalLiquido())
-            );
+            row.createCell(0).setCellValue("Total Líquido:");
+            row.createCell(1).setCellValue(dto.totalLiquido().doubleValue());
 
             row = sheet.createRow(rowIdx++);
-            cell = row.createCell(0);
-            cell.setCellValue("Parcelas:");
-            cell.setCellStyle(headerStyle);
-            row.createCell(1).setCellValue(orc.parcelas());
+            row.createCell(0).setCellValue("Parcelas:");
+            row.createCell(1).setCellValue(dto.parcelas());
 
-            // Agora sim: auto-size em todas as colunas usadas
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
-            sheet.autoSizeColumn(0);
-            sheet.autoSizeColumn(1);
 
-            // Grava em memória e retorna bytes
             wb.write(baos);
             return baos.toByteArray();
         }

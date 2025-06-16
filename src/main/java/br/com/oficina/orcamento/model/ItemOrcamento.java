@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/model/ItemOrcamento.java
 package br.com.oficina.orcamento.model;
 
 import jakarta.persistence.*;
@@ -9,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "orcamento_servicos") // ou "item_orcamento", conforme seu schema
+@Table(name = "orcamento_servicos")
 @Getter
 @Setter
 public class ItemOrcamento {

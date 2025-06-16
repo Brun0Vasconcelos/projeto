@@ -12,8 +12,5 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
 
     List<Veiculo> findByPlacaContainingIgnoreCase(String placa);
 
-    /**
-     * Necessário para o método porCliente(...)
-     */
     List<Veiculo> findByClienteId(Long clienteId);
 }

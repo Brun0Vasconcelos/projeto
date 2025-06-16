@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/service/ClienteService.java
 package br.com.oficina.orcamento.service;
 
 import br.com.oficina.orcamento.dto.ClienteDTO;
@@ -32,26 +31,25 @@ public class ClienteService {
 
     public Cliente buscarPorId(Long id) {
         return clienteRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + id));
+    }
+
+    public List<Cliente> buscarPorNome(String nome) {
+        return clienteRepository.findByNomeContainingIgnoreCase(nome);
     }
 
     public Cliente atualizar(Long id, ClienteDTO dto) {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
-
+        Cliente cliente = buscarPorId(id);
         cliente.setNome(dto.nome());
         cliente.setEmail(dto.email());
         cliente.setTelefone(dto.telefone());
         cliente.setCpf(dto.cpf());
         cliente.setFormaPagamentoPreferida(dto.formaPagamentoPreferida());
-
         return clienteRepository.save(cliente);
     }
 
     public void remover(Long id) {
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
+        Cliente cliente = buscarPorId(id);
         clienteRepository.delete(cliente);
     }
-
 }

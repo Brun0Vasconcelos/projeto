@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/service/OrcamentoService.java
 package br.com.oficina.orcamento.service;
 
 import br.com.oficina.orcamento.dto.ItemOrcamentoDTO;
@@ -29,9 +28,6 @@ public class OrcamentoService {
     private final VeiculoRepository veiculoRepository;
     private final ServicoRepository servicoRepository;
 
-    /**
-     * Busca um orçamento por ID e converte para DTO.
-     */
     @Transactional(readOnly = true)
     public OrcamentoDTO buscarPorId(Long id) {
         Orcamento orc = orcamentoRepository.findById(id)
@@ -39,10 +35,6 @@ public class OrcamentoService {
         return mapToDTO(orc);
     }
 
-    /**
-     * Gera um novo orçamento para o veículo, inclui todos os serviços daquele veículo,
-     * calcula bruto e líquido, salva e retorna o DTO.
-     */
     @Transactional
     public OrcamentoDTO gerarPorVeiculo(Long veiculoId, int descontoPercentual, int parcelas) {
         Veiculo veiculo = veiculoRepository.findById(veiculoId)
@@ -50,13 +42,18 @@ public class OrcamentoService {
 
         List<Servico> servicos = servicoRepository.findByVeiculoId(veiculoId);
 
+        if (servicos.isEmpty()) {
+            throw new IllegalStateException("Não há serviços cadastrados para este veículo.");
+        }
+
         BigDecimal totalBruto = servicos.stream()
                 .map(Servico::getValor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal fatorDesconto = BigDecimal.valueOf(100 - descontoPercentual)
                 .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-        BigDecimal totalLiquido = totalBruto.multiply(fatorDesconto);
+
+        BigDecimal totalLiquido = totalBruto.multiply(fatorDesconto).setScale(2, RoundingMode.HALF_UP);
 
         Orcamento orc = new Orcamento();
         orc.setVeiculo(veiculo);
@@ -64,7 +61,7 @@ public class OrcamentoService {
         orc.setData(LocalDate.now());
         orc.setDescontoPercentual(descontoPercentual);
         orc.setParcelas(parcelas);
-        orc.setTotalBruto(totalBruto);
+        orc.setTotalBruto(totalBruto.setScale(2, RoundingMode.HALF_UP));
         orc.setTotalLiquido(totalLiquido);
 
         List<ItemOrcamento> itens = servicos.stream()
@@ -104,15 +101,25 @@ public class OrcamentoService {
                 .orElseThrow(() -> new EntityNotFoundException("Orçamento não encontrado: " + id));
 
         if (descontoPercentual != null) {
+            if (descontoPercentual < 0 || descontoPercentual > 100) {
+                throw new IllegalArgumentException("Desconto deve estar entre 0 e 100.");
+            }
             orc.setDescontoPercentual(descontoPercentual);
         }
+
         if (parcelas != null) {
+            if (parcelas <= 0) {
+                throw new IllegalArgumentException("Parcelas deve ser maior que zero.");
+            }
             orc.setParcelas(parcelas);
         }
 
         BigDecimal fator = BigDecimal.valueOf(100 - orc.getDescontoPercentual())
                 .divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
-        orc.setTotalLiquido(orc.getTotalBruto().multiply(fator));
+
+        orc.setTotalLiquido(
+                orc.getTotalBruto().multiply(fator).setScale(2, RoundingMode.HALF_UP)
+        );
 
         Orcamento atualizado = orcamentoRepository.save(orc);
         return mapToDTO(atualizado);

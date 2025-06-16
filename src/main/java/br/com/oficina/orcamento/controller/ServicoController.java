@@ -5,7 +5,6 @@ import br.com.oficina.orcamento.model.Servico;
 import br.com.oficina.orcamento.service.ServicoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,63 +14,65 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/veiculos/{veiculoId}/servicos")
+@RequestMapping("/servicos")
 @RequiredArgsConstructor
-@Tag(name = "Serviços", description = "Gerencia os serviços de manutenção dos veículos")
+@CrossOrigin(origins = "*")
+@Tag(name = "Serviços", description = "Gerencia os serviços realizados nos veículos")
 public class ServicoController {
 
     private final ServicoService service;
 
-    @Operation(summary = "Lista todos os serviços de um veículo")
+    @Operation(summary = "Cadastra um serviço para um veículo")
+    @PostMapping("/veiculo/{veiculoId}")
+    public ResponseEntity<ServicoDTO> criar(
+            @PathVariable Long veiculoId,
+            @RequestBody @Valid ServicoDTO dto
+    ) {
+        Servico salvo = service.adicionarAoVeiculo(veiculoId, dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ServicoDTO(salvo));
+    }
+
+    @Operation(summary = "Lista todos os serviços")
     @GetMapping
-    public ResponseEntity<List<ServicoDTO>> listarPorVeiculo(@PathVariable Long veiculoId) {
-        var dtos = service.listarPorVeiculo(veiculoId)
+    public ResponseEntity<List<ServicoDTO>> listar() {
+        List<ServicoDTO> lista = service.listar()
                 .stream()
                 .map(ServicoDTO::new)
                 .toList();
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(lista);
     }
 
-    @Operation(summary = "Busca um serviço por ID")
+    @Operation(summary = "Busca serviço por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ServicoDTO> buscarPorId(
-            @PathVariable Long veiculoId,
-            @PathVariable Long id) {
-
-        Servico serv = service.buscarPorVeiculo(veiculoId, id);
-        return ResponseEntity.ok(new ServicoDTO(serv));
+    public ResponseEntity<ServicoDTO> buscarPorId(@PathVariable Long id) {
+        Servico s = service.buscarPorId(id);
+        return ResponseEntity.ok(new ServicoDTO(s));
     }
 
-    @Operation(summary = "Cadastra um novo serviço em um veículo")
-    @PostMapping
-    public ResponseEntity<ServicoDTO> criar(
-            @PathVariable Long veiculoId,
-            @Valid @RequestBody ServicoDTO dto) {
-
-        Servico criado = service.adicionarAoVeiculo(veiculoId, dto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new ServicoDTO(criado));
+    @Operation(summary = "Lista serviços de um veículo")
+    @GetMapping("/veiculo/{veiculoId}")
+    public ResponseEntity<List<ServicoDTO>> listarPorVeiculo(@PathVariable Long veiculoId) {
+        List<ServicoDTO> servicos = service.listarPorVeiculo(veiculoId)
+                .stream()
+                .map(ServicoDTO::new)
+                .toList();
+        return ResponseEntity.ok(servicos);
     }
 
-    @Operation(summary = "Atualiza um serviço existente")
+    @Operation(summary = "Atualiza um serviço")
     @PutMapping("/{id}")
     public ResponseEntity<ServicoDTO> atualizar(
-            @PathVariable Long veiculoId,
             @PathVariable Long id,
-            @Valid @RequestBody ServicoDTO dto) {
-
-        Servico upd = service.atualizar(veiculoId, id, dto);
-        return ResponseEntity.ok(new ServicoDTO(upd));
+            @RequestBody @Valid ServicoDTO dto
+    ) {
+        Servico atualizado = service.atualizar(id, dto);
+        return ResponseEntity.ok(new ServicoDTO(atualizado));
     }
 
     @Operation(summary = "Remove um serviço")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> remover(
-            @PathVariable Long veiculoId,
-            @PathVariable Long id) {
-
-        service.remover(veiculoId, id);
+    public ResponseEntity<Void> remover(@PathVariable Long id) {
+        service.remover(id);
         return ResponseEntity.noContent().build();
     }
 }

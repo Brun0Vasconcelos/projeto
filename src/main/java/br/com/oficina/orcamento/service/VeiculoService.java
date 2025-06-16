@@ -16,64 +16,61 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VeiculoService {
 
-    private final VeiculoRepository veiculoRepo;
-    private final ClienteRepository clienteRepo;
+    private final VeiculoRepository veiculoRepository;
+    private final ClienteRepository clienteRepository;
 
     @Transactional
     public Veiculo adicionarAoCliente(Long clienteId, VeiculoDTO dto) {
-        Cliente cliente = clienteRepo.findById(clienteId)
-                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado"));
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado com ID: " + clienteId));
 
-        // checa duplicata de placa
-        veiculoRepo.findByPlaca(dto.placa())
-                .ifPresent(ex -> {
-                    if (!ex.getCliente().getId().equals(clienteId)) {
-                        throw new IllegalArgumentException("Essa placa já está registrada para outro cliente.");
-                    }
-                });
+        Veiculo veiculo = new Veiculo();
+        veiculo.setPlaca(dto.placa());
+        veiculo.setMarca(dto.marca());
+        veiculo.setModelo(dto.modelo());
+        veiculo.setAno(dto.ano());
+        veiculo.setCor(dto.cor());
+        veiculo.setCliente(cliente);
 
-        Veiculo veiculo = new Veiculo(
-                dto.placa(),
-                dto.marca(),
-                dto.modelo(),
-                dto.ano(),
-                dto.cor(),
-                cliente
-        );
-
-        return veiculoRepo.save(veiculo);
+        return veiculoRepository.save(veiculo);
     }
 
-    /**
-     * retorna todos os veículos — usado por listarTodos() no Controller e no Test
-     */
     @Transactional(readOnly = true)
     public List<Veiculo> listar() {
-        return veiculoRepo.findAll();
+        return veiculoRepository.findAll();
     }
 
     @Transactional(readOnly = true)
     public Veiculo buscarPorId(Long id) {
-        return veiculoRepo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado"));
+        return veiculoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado com ID: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Veiculo> listarPorCliente(Long clienteId) {
+        return veiculoRepository.findByClienteId(clienteId);
     }
 
     @Transactional
     public Veiculo atualizar(Long id, VeiculoDTO dto) {
-        Veiculo existente = buscarPorId(id);
+        Veiculo veiculo = veiculoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado com ID: " + id));
 
-        existente.setPlaca(dto.placa());
-        existente.setMarca(dto.marca());
-        existente.setModelo(dto.modelo());
-        existente.setAno(dto.ano());
-        existente.setCor(dto.cor());
+        veiculo.setPlaca(dto.placa());
+        veiculo.setMarca(dto.marca());
+        veiculo.setModelo(dto.modelo());
+        veiculo.setAno(dto.ano());
+        veiculo.setCor(dto.cor());
 
-        return veiculoRepo.save(existente);
+        return veiculoRepository.save(veiculo);
     }
 
     @Transactional
     public void remover(Long id) {
-        Veiculo v = buscarPorId(id);
-        veiculoRepo.delete(v);
+        Veiculo veiculo = veiculoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Veículo não encontrado com ID: " + id));
+        veiculoRepository.delete(veiculo);
     }
+
+
 }

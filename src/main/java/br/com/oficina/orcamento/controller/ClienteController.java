@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/controller/ClienteController.java
 package br.com.oficina.orcamento.controller;
 
 import br.com.oficina.orcamento.dto.ClienteDTO;
@@ -16,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/clientes")
-@CrossOrigin(origins = "*")   // libera todas as origens para dev
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Tag(name = "Clientes", description = "Gerencia o cadastro de clientes")
 public class ClienteController {
@@ -27,15 +26,13 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<ClienteDTO> criar(@RequestBody @Valid ClienteDTO dto) {
         Cliente criado = service.salvar(dto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ClienteDTO(criado));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ClienteDTO(criado));
     }
 
     @Operation(summary = "Lista todos os clientes")
     @GetMapping
     public ResponseEntity<List<ClienteDTO>> listarTodos() {
-        var clientes = service.listar()
-                .stream()
+        List<ClienteDTO> clientes = service.listar().stream()
                 .map(ClienteDTO::new)
                 .toList();
         return ResponseEntity.ok(clientes);
@@ -44,8 +41,17 @@ public class ClienteController {
     @Operation(summary = "Busca cliente por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ClienteDTO> buscarPorId(@PathVariable Long id) {
-        Cliente c = service.buscarPorId(id);
-        return ResponseEntity.ok(new ClienteDTO(c));
+        Cliente cliente = service.buscarPorId(id);
+        return ResponseEntity.ok(new ClienteDTO(cliente));
+    }
+
+    @Operation(summary = "Busca clientes por nome (parcial ou completo)")
+    @GetMapping("/search")
+    public ResponseEntity<List<ClienteDTO>> buscarPorNome(@RequestParam String nome) {
+        List<ClienteDTO> clientes = service.buscarPorNome(nome).stream()
+                .map(ClienteDTO::new)
+                .toList();
+        return ResponseEntity.ok(clientes);
     }
 
     @Operation(summary = "Atualiza um cliente")

@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/controller/ExportController.java
 package br.com.oficina.orcamento.controller;
 
 import br.com.oficina.orcamento.service.ExcelExportService;
@@ -13,8 +12,9 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-@RequestMapping
+@RequestMapping("/export")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class ExportController {
 
     private final PdfExportService pdfService;
@@ -27,7 +27,7 @@ public class ExportController {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_PDF)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"orcamento-" + id + ".pdf\"")
+                            "attachment; filename=orcamento-" + id + ".pdf")
                     .body(new ByteArrayResource(pdf));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -46,7 +46,7 @@ public class ExportController {
                     .contentType(MediaType.parseMediaType(
                             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"orcamento-" + id + ".xlsx\"")
+                            "attachment; filename=orcamento-" + id + ".xlsx")
                     .body(new ByteArrayResource(xlsx));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

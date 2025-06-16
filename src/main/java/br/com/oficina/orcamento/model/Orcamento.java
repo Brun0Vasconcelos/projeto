@@ -1,4 +1,3 @@
-// src/main/java/br/com/oficina/orcamento/model/Orcamento.java
 package br.com.oficina.orcamento.model;
 
 import jakarta.persistence.*;
